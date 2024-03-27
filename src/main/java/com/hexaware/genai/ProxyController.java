@@ -13,10 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.support.RestTemplateAdapter;
 
 import javax.print.attribute.standard.Media;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 public class ProxyController
@@ -28,11 +25,11 @@ public class ProxyController
     private static String TENSAI_URL = "https://gwdocs-dev.azurewebsites.net/chat_stream/general";
     @GetMapping(value = "/prompt", produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
-    public String askTensai(@RequestParam("question") String question) throws Exception{
+    public Map askTensai(@RequestParam("question") String question) throws Exception{
         LOGGER.info(" Prompt {}", question);
-        HashMap<String, String> responseMap = new HashMap<>();
+        HashMap responseMap = new HashMap<>();
         responseMap.put("question", question);
-        responseMap.put("answer", "Sample response from tensai");
+
 
         restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -59,9 +56,21 @@ public class ProxyController
         HttpEntity<Map> request = new HttpEntity<>(requestMap, httpHeaders);
 
         String responseFromTensai = restTemplate.postForObject(TENSAI_URL, request, String.class);
+//       LOGGER.info("Output from Tensai {}", responseFromTensai.split("\\r").length);
+       LOGGER.info("Output from Tensai {}", responseFromTensai.split("\\n").length);
 
-        LOGGER.info("Response from Tensai {}", responseFromTensai);
+        String[] splitStringArray = responseFromTensai.split("\\n");
+        List<String> responseArray = new ArrayList<>();
 
-        return responseFromTensai;
+        int count =0;
+        for(String token: splitStringArray){
+            if(count != 0){
+                responseArray.add(token);
+            }
+
+            count++;
+        }
+        responseMap.put("answer", responseArray);
+        return responseMap;
     }
 }
