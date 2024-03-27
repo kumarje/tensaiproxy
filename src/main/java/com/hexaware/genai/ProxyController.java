@@ -1,18 +1,15 @@
 package com.hexaware.genai;
 
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.support.RestTemplateAdapter;
 
-import javax.print.attribute.standard.Media;
 import java.util.*;
 
 @RestController
@@ -22,13 +19,15 @@ public class ProxyController
 
     private RestTemplate restTemplate = null;
 
-    private static String TENSAI_URL = "https://gwdocs-dev.azurewebsites.net/chat_stream/general";
+    private static String TENSAI_URL = "https://gwdocs-dev.azurewebsites.net/chat_stream/guidewire";
     @GetMapping(value = "/prompt", produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
     public Map askTensai(@RequestParam("question") String question) throws Exception{
         LOGGER.info(" Prompt {}", question);
         HashMap responseMap = new HashMap<>();
         responseMap.put("question", question);
+
+
 
 
         restTemplate = new RestTemplate();
@@ -40,24 +39,26 @@ public class ProxyController
         historyMap.put("user", question);
         historyList.add(historyMap);
 
-        HashMap<String, String> overrideMap = new HashMap<>();
-        overrideMap.put("semantic_ranker", "true");
+        HashMap overrideMap = new HashMap<>();
+        overrideMap.put("semantic_ranker", true);
         overrideMap.put("retrieval_mode", "hybrid");
-        overrideMap.put("semantic_captions", "false");
-        overrideMap.put("top","5");
-        overrideMap.put("suggest_followup_questions", "false");
-        overrideMap.put("use_oid_security_filter", "false");
-        overrideMap.put( "use_groups_security_filter", "false");
+        overrideMap.put("semantic_captions", false);
+        overrideMap.put("top",5);
+        overrideMap.put("suggest_followup_questions", false);
+        overrideMap.put("use_oid_security_filter", false);
+        overrideMap.put( "use_groups_security_filter", false);
         HashMap requestMap = new HashMap();
         requestMap.put("history", historyList);
         requestMap.put("approach", "rrr");
         requestMap.put("overrides", overrideMap);
 
-        HttpEntity<Map> request = new HttpEntity<>(requestMap, httpHeaders);
+        JSONObject jsonObject = new JSONObject(requestMap);
+        String jsonStr = jsonObject.toString();
+        LOGGER.info("Json {}", jsonStr);
+
+        HttpEntity<String> request = new HttpEntity<>(jsonStr, httpHeaders);
 
         String responseFromTensai = restTemplate.postForObject(TENSAI_URL, request, String.class);
-//       LOGGER.info("Output from Tensai {}", responseFromTensai.split("\\r").length);
-       LOGGER.info("Output from Tensai {}", responseFromTensai.split("\\n").length);
 
         String[] splitStringArray = responseFromTensai.split("\\n");
         List<String> responseArray = new ArrayList<>();
@@ -65,6 +66,7 @@ public class ProxyController
         int count =0;
         for(String token: splitStringArray){
             if(count != 0){
+                LOGGER.info("Gen AI Response {}", token);
                 responseArray.add(token);
             }
 
