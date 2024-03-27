@@ -8,10 +8,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.support.RestTemplateAdapter;
 
@@ -30,6 +27,7 @@ public class ProxyController
 
     private static String TENSAI_URL = "https://gwdocs-dev.azurewebsites.net/chat_stream/general";
     @GetMapping(value = "/prompt", produces = MediaType.APPLICATION_JSON_VALUE)
+    @CrossOrigin(origins = "*")
     public String askTensai(@RequestParam("question") String question) throws Exception{
         LOGGER.info(" Prompt {}", question);
         HashMap<String, String> responseMap = new HashMap<>();
